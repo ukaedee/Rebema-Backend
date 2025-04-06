@@ -28,14 +28,11 @@ jobs:
           zip -r ../package.zip .
           cd ..
 
-      # 🔐 Azure にログイン（ここが追加された部分）
-      - name: Azure Login
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+      # ❌ このステップは削除：Azure Login は不要！
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: package.zip
