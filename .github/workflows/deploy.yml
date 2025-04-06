@@ -6,7 +6,7 @@ on:
 
 env:
   AZURE_WEBAPP_NAME: app-002-step3-2-py-oshima14
-  AZURE_WEBAPP_PACKAGE_PATH: rebema-backend
+  AZURE_WEBAPP_PACKAGE_PATH: .
 
 jobs:
   build-and-deploy:
@@ -24,15 +24,10 @@ jobs:
           # 一時ディレクトリを作成
           mkdir -p deploy_package
           
-          # アプリケーションディレクトリをコピー（venvを除外）
-          mkdir -p deploy_package/${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
-          rsync -av --exclude='venv' ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/ deploy_package/${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/
+          # アプリケーションファイルをコピー（venv除外）
+          rsync -av --exclude='venv' . deploy_package/
           
-          # startup.shをWebAppのルートディレクトリにコピー
-          cp deploy_package/${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/startup.sh deploy_package/
-          
-          # startup.shの実行権限を設定
-          chmod +x deploy_package/${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/startup.sh
+          # startup.sh の実行権限を設定
           chmod +x deploy_package/startup.sh
           
           # パッケージの作成
@@ -44,11 +39,11 @@ jobs:
           echo "=== Package Contents ==="
           unzip -l package.zip
           
-          # 重要なファイルの存在確認
+          # 重要ファイルの存在確認
           echo "=== Verifying Critical Files ==="
           unzip -l package.zip | grep -E "startup.sh|requirements.txt|main.py"
           
-          # venvディレクトリが含まれていないことを確認
+          # venvディレクトリが含まれていないか確認
           echo "=== Checking for venv directory ==="
           if unzip -l package.zip | grep -q "venv"; then
             echo "Warning: venv directory found in package"
@@ -62,4 +57,4 @@ jobs:
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: package.zip 
+          package: package.zip
