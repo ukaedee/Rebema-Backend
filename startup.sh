@@ -82,11 +82,13 @@ echo "Contents of current directory:"
 run_with_output ls -la
 
 # アプリケーションのルートディレクトリを明示的に指定
-APP_DIR="/home/site/wwwroot/rebema-backend"
+# アプリケーションのルートディレクトリを明示的に指定
+APP_DIR="/home/site/wwwroot"
 echo "Using application directory: $APP_DIR"
 
 echo "=== Moving to Application Directory ==="
 cd "$APP_DIR" || exit 1
+
 echo "Current directory: $(pwd)"
 run_with_output ls -la
 
