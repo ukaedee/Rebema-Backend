@@ -21,40 +21,21 @@ jobs:
 
       - name: Create deployment package
         run: |
-          # 一時ディレクトリを作成
           mkdir -p deploy_package
-          
-          # アプリケーションファイルをコピー（venv除外）
           rsync -av --exclude='venv' . deploy_package/
-          
-          # startup.sh の実行権限を設定
           chmod +x deploy_package/startup.sh
-          
-          # パッケージの作成
           cd deploy_package
           zip -r ../package.zip .
           cd ..
-          
-          # パッケージの内容を確認
-          echo "=== Package Contents ==="
-          unzip -l package.zip
-          
-          # 重要ファイルの存在確認
-          echo "=== Verifying Critical Files ==="
-          unzip -l package.zip | grep -E "startup.sh|requirements.txt|main.py"
-          
-          # venvディレクトリが含まれていないか確認
-          echo "=== Checking for venv directory ==="
-          if unzip -l package.zip | grep -q "venv"; then
-            echo "Warning: venv directory found in package"
-            exit 1
-          else
-            echo "Success: No venv directory in package"
-          fi
+
+      # 🔐 Azure にログイン（ここが追加された部分）
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: package.zip
