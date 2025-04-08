@@ -751,39 +751,90 @@ async def delete_comment(
         print(f"コメント削除エラー: {str(e)}")
         return {"message": "コメントが正常に削除されました"}
 
-@router.post("/{knowledge_id}/collaborators")
-async def add_collaborator(
-    knowledge_id: int,
-    user_id: int,
-    db: Session = Depends(get_db),
-    current_user: Optional[User] = Depends(get_current_user)
-):
-    try:
-        if current_user is None:
-            # テスト用デフォルト値を返す（認証エラーの場合）
-            return {"message": "コラボレーターが正常に追加されました"}
+## コラボレーター追加は不要？　0408
 
-        knowledge = db.query(Knowledge).filter(Knowledge.id == knowledge_id).first()
-        if not knowledge:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="ナレッジが見つかりません"
-            )
+# @router.post("/{knowledge_id}/collaborators")
+# async def add_collaborator(
+#     knowledge_id: int,
+#     user_id: int,
+#     db: Session = Depends(get_db),
+#     current_user: Optional[User] = Depends(get_current_user)
+# ):
+#     try:
+#         if current_user is None:
+#             # テスト用デフォルト値を返す（認証エラーの場合）
+#             return {"message": "コラボレーターが正常に追加されました"}
+
+#         knowledge = db.query(Knowledge).filter(Knowledge.id == knowledge_id).first()
+#         if not knowledge:
+#             raise HTTPException(
+#                 status_code=status.HTTP_404_NOT_FOUND,
+#                 detail="ナレッジが見つかりません"
+#             )
         
-        if knowledge.author_id != current_user.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="コラボレーターを追加する権限がありません"
-            )
+#         if knowledge.author_id != current_user.id:
+#             raise HTTPException(
+#                 status_code=status.HTTP_403_FORBIDDEN,
+#                 detail="コラボレーターを追加する権限がありません"
+#             )
         
-        collaborator = KnowledgeCollaborator(
-            knowledge_id=knowledge_id,
-            user_id=user_id
-        )
-        db.add(collaborator)
-        db.commit()
+#         collaborator = KnowledgeCollaborator(
+#             knowledge_id=knowledge_id,
+#             user_id=user_id
+#         )
+#         db.add(collaborator)
+#         db.commit()
         
-        return {"message": "コラボレーターが正常に追加されました"}
-    except Exception as e:
-        print(f"コラボレーター追加エラー: {str(e)}")
-        return {"message": "コラボレーターが正常に追加されました"} 
+#         return {"message": "コラボレーターが正常に追加されました"}
+#     except Exception as e:
+#         print(f"コラボレーター追加エラー: {str(e)}")
+#         return {"message": "コラボレーターが正常に追加されました"} 
+
+
+# 人気のナレッジ取得（ビュー数順）を追加　0408
+
+@router.get("/popular")
+async def get_popular_knowledge(
+    limit: int = 10,
+    db: Session = Depends(get_db)
+):
+    
+    knowledge_list = (
+        db.query(Knowledge)
+        .order_by(Knowledge.views.desc())
+        .limit(limit)
+        .all()
+    )
+
+    result = []
+    for k in knowledge_list:
+        author = db.query(User).filter(User.id == k.author_id).first()
+        file_count = db.query(FileModel).filter(FileModel.knowledge_id == k.id).count()
+        comment_count = db.query(Comment).filter(Comment.knowledge_id == k.id).count()
+
+        result.append({
+            "id": k.id,
+            "title": k.title,
+            "description": k.description,
+            "method": k.method,
+            "target": k.target,
+            "category": k.category,
+            "views": k.views,
+            "createdAt": k.created_at.strftime("%Y年%m月%d日"),
+            "updatedAt": k.updated_at.strftime("%Y年%m月%d日"),
+            "author": {
+                "id": author.id,
+                "name": author.username,
+                "avatarUrl": author.avatar_url,
+                "department": author.department
+            },
+            "stats": {
+                "commentCount": comment_count,
+                "fileCount": file_count
+            }
+        })
+
+    return {
+        "total": len(result),
+        "items": result
+    }
