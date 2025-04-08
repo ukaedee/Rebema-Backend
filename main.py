@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.utils import get_openapi
 from routers import auth, knowledge, ranking, profile
 from models.database import engine, Base
 import os
@@ -13,7 +14,7 @@ app = FastAPI(title="Rebema API")
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,  # 環境変数から取得
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -27,4 +28,30 @@ app.include_router(profile.router, prefix="/profile", tags=["profile"])
 
 @app.get("/")
 async def root():
-    return {"message": "Welcome to Rebema API"} 
+    return {"message": "Welcome to Rebema API"}
+
+# ✅ Swagger UIでJWTを使えるようにするカスタムOpenAPI定義
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    openapi_schema = get_openapi(
+        title="Rebema API",
+        version="1.0.0",
+        description="Rebema Backend API with JWT auth",
+        routes=app.routes,
+    )
+    openapi_schema["components"]["securitySchemes"] = {
+        "OAuth2PasswordBearer": {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT",
+        }
+    }
+    for path in openapi_schema["paths"].values():
+        for method in path.values():
+            if "security" not in method:
+                method["security"] = [{"OAuth2PasswordBearer": []}]
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+app.openapi = custom_openapi
