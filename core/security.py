@@ -55,13 +55,14 @@ async def get_current_user(
     )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id_str = payload.get("sub")
-        if user_id_str is None:
+        # トークン解凍データの例 {'sub': 'rebema1@example.com', 'exp': 1744215602} 
+        user_email = payload.get("sub")
+        if user_email is None:
             raise credentials_exception
     except (JWTError, ValueError):
         raise credentials_exception
 
-    user = db.query(User).filter(User.id == user_id).first()
+    user = db.query(User).filter(User.email == user_email).first()
     if user is None:
         raise credentials_exception
     return user
