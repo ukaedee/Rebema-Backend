@@ -102,7 +102,7 @@ echo "=== Checking Required Packages ==="
 run_with_output python3 -m pip list | grep -E "fastapi|uvicorn|gunicorn"
 
 # 環境変数が設定されていない場合は8000を使用
-PORT=${WEBSITES_PORT:-8000}
+PORT=${PORT:-8000}
 echo "Using port: $PORT"
 
 # PYTHONPATHにアプリケーションディレクトリを追加
@@ -148,9 +148,9 @@ exec gunicorn main:app \
     --timeout=120 \
     --access-logfile=- \
     --error-logfile=- \
-    --log-level=info \
+    --log-level=debug \
     --chdir "$APP_DIR" \
     --capture-output \
-    --enable-stdio-inheritance
+    --enable-stdio-inheritance \
+    --preload
 
-STARTUP_COMMAND=bash rebema-backend/startup.sh
