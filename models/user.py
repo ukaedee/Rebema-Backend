@@ -2,6 +2,8 @@ from sqlalchemy import Column, Integer, String, Boolean, DateTime, LargeBinary
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from .database import Base
+from .knowledge_collaborator import KnowledgeCollaborator 
+
 
 class User(Base):
     __tablename__ = "users"
@@ -27,3 +29,5 @@ class User(Base):
     activities = relationship("UserActivity", back_populates="user")
     collaborations = relationship("KnowledgeCollaborator", back_populates="user")
     profile = relationship("Profile", back_populates="user", uselist=False) 
+
+

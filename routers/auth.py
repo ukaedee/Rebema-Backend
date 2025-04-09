@@ -14,7 +14,7 @@ from core.security import (
 from utils.auth import verify_token
 
 router = APIRouter()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
 class LoginRequest(BaseModel):
@@ -27,16 +27,27 @@ async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
+    print("ログイン試行:", form_data.username)
     user = db.query(User).filter(User.email == form_data.username).first()
-    if not user or not verify_password(form_data.password, user.hashed_password):
+
+    if not user:
+        print("ユーザーが存在しません")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="メールアドレスまたはパスワードが正しくありません",
-            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    if not verify_password(form_data.password, user.password_hash):
+
+        print("パスワードが一致しません")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="メールアドレスまたはパスワードが正しくありません",
         )
 
     access_token = create_access_token(data={"sub": user.email})
     return {"jwt_token": access_token}
+
 
 
 @router.get("/me")
