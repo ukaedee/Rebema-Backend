@@ -11,43 +11,58 @@ from models.database import get_db
 from models.user import User
 
 # 設定
-SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-here")  # 環境変数から取得、デフォルト値を設定
+SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-here")  # 環境変数から取得、デフォルトも設定
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
+# パスワードハッシュ
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
+# トークンエンドポイントのURLを正しく設定
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+
+
+# パスワード照合
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
+
+# パスワードのハッシュ化
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
+
+# アクセストークン作成
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
+    if not expires_delta:
+        expires_delta = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.utcnow() + expires_delta
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
+
+# 現在のユーザー取得（JWTトークンから）
+async def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db)
+) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
+        detail="認証情報が正しくありません",
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: int = payload.get("sub")
-        if user_id is None:
+        user_id_str = payload.get("sub")
+        if user_id_str is None:
             raise credentials_exception
-    except JWTError:
+        user_id = int(user_id_str)
+    except (JWTError, ValueError):
         raise credentials_exception
+
     user = db.query(User).filter(User.id == user_id).first()
     if user is None:
         raise credentials_exception
-    return user 
+    return user
