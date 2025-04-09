@@ -1,8 +1,8 @@
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from pydantic import BaseModel, EmailStr
+from fastapi import APIRouter, Depends, HTTPException, status, Form
+from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
+from pydantic import EmailStr
 
 from models.database import get_db
 from models.user import User
@@ -11,23 +11,32 @@ from core.security import (
     create_access_token,
     get_current_user
 )
-from utils.auth import verify_token
+
+# ⬇️ この中にカスタムフォームクラスを直接定義（utilsに分けてもOK）
+class OAuth2EmailRequestForm:
+    def __init__(
+        self,
+        email: EmailStr = Form(..., description="ログイン用のメールアドレス"),
+        password: str = Form(..., description="ログイン用のパスワード"),
+    ):
+        self.username = email  # FastAPI互換のため
+        self.password = password
+        self.scopes = []
+        self.client_id = None
+        self.client_secret = None
+
 
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
-class LoginRequest(BaseModel):
-    email: EmailStr
-    password: str
-
-
 @router.post("/login")
 async def login(
-    form_data: OAuth2PasswordRequestForm = Depends(),
+    form_data: OAuth2EmailRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
-    print("ログイン試行:", form_data.username)
+    print("ログイン試行:", form_data.username)  # emailが入る
+
     user = db.query(User).filter(User.email == form_data.username).first()
 
     if not user:
@@ -38,7 +47,6 @@ async def login(
         )
 
     if not verify_password(form_data.password, user.password_hash):
-
         print("パスワードが一致しません")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -47,7 +55,6 @@ async def login(
 
     access_token = create_access_token(data={"sub": user.email})
     return {"jwt_token": access_token}
-
 
 
 @router.get("/me")
