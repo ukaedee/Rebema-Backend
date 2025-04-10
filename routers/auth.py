@@ -6,6 +6,8 @@ from pydantic import EmailStr
 
 from models.database import get_db
 from models.user import User
+from models.knowledge import Knowledge
+from models.comment import Comment
 from core.security import (
     verify_password,
     create_access_token,
@@ -58,7 +60,52 @@ async def login(
 
 
 @router.get("/me")
-async def get_profile(current_user: User = Depends(get_current_user)):
+async def get_profile(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    # ユーザーの最新のナレッジを取得
+    recent_knowledge = (
+        db.query(Knowledge)
+        .filter(Knowledge.author_id == current_user.id)
+        .order_by(Knowledge.created_at.desc())
+        .limit(5)
+        .all()
+    )
+
+    # アクティビティリストの作成
+    activities = []
+    for knowledge in recent_knowledge:
+        # ナレッジに関連するコメントを取得（Userテーブルと結合）
+        comments = (
+            db.query(Comment, User)
+            .join(User, Comment.author_id == User.id)
+            .filter(Comment.knowledge_id == knowledge.id)
+            .order_by(Comment.created_at.desc())
+            .all()
+        )
+        
+        comment_list = [
+            {
+                "author": user.username,  # Userテーブルから直接username取得
+                "avatar": user.avatar_data,
+                "createdAt": comment.created_at.strftime("%Y年%m月%d日"),
+                "content": comment.content
+            }
+            for comment, user in comments
+        ]
+
+        activities.append({
+            "id": knowledge.id,
+            "title": knowledge.title,
+            "method": knowledge.method,
+            "author": current_user.username,
+            "views": knowledge.views,
+            "createdAt": knowledge.created_at.strftime("%Y年%m月%d日"),
+            "content": knowledge.description,
+            "comments": comment_list
+        })
+
     return {
         "id": current_user.id,
         "email": current_user.email,
@@ -66,4 +113,6 @@ async def get_profile(current_user: User = Depends(get_current_user)):
         "department": current_user.department,
         "level": current_user.level,
         "experiencePoints": current_user.experience_points,
+        "avatar": current_user.avatar_data,
+        "activity": activities
     }
