@@ -4,6 +4,9 @@ from fastapi.openapi.utils import get_openapi
 from routers import auth, knowledge, ranking, profile
 from models.database import engine, Base
 import os
+from routers import comments
+
+
 
 # データベースのテーブルを作成
 Base.metadata.create_all(bind=engine)
@@ -25,7 +28,7 @@ app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(knowledge.router, prefix="/knowledge", tags=["knowledge"])
 app.include_router(ranking.router, prefix="/ranking", tags=["ranking"])
 app.include_router(profile.router, prefix="/profile", tags=["profile"])
-
+app.include_router(comments.router)
 @app.get("/")
 async def root():
     return {"message": "Welcome to Rebema API"}

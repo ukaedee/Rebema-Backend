@@ -21,7 +21,7 @@ async def create_knowledge(
     category: Optional[str] = Form(None),
     files: Optional[List[UploadFile]] = File(None),
     db: Session = Depends(get_db),
-    current_user: Optional[User] = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     try:
         if current_user is None:
@@ -123,3 +123,145 @@ async def create_knowledge(
                 "fileCount": 0
             }
         }
+
+@router.get("/{knowledge_id}")
+async def get_knowledge_detail(
+    knowledge_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user) ,
+):
+    knowledge = db.query(Knowledge).filter(Knowledge.id == knowledge_id).first()
+    if not knowledge:
+        raise HTTPException(status_code=404, detail="ナレッジが見つかりません")
+
+    # 閲覧数をインクリメント
+    knowledge.views += 1
+    db.commit()
+    
+    # コメント一覧を取得
+    comments = [
+        {
+            "id": c.id,
+            "content": c.content,
+            "author": {
+                "id": c.author.id,
+                "name": c.author.username,
+                "avatarUrl": c.author.avatar_url,
+                "department": c.author.department
+            },
+            "createdAt": c.created_at.strftime("%Y年%m月%d日")
+        }
+        for c in knowledge.comments
+    ]
+
+    return {
+        "id": knowledge.id,
+        "title": knowledge.title,
+        "method": knowledge.method,
+        "target": knowledge.target,
+        "description": knowledge.description,
+        "category": knowledge.category,
+        "views": knowledge.views,
+        "createdAt": knowledge.created_at.strftime("%Y年%m月%d日"),
+        "updatedAt": knowledge.updated_at.strftime("%Y年%m月%d日"),
+        "author": {
+            "id": knowledge.author.id,
+            "name": knowledge.author.username,
+            "avatarUrl": knowledge.author.avatar_url,
+            "department": knowledge.author.department
+        },
+        "stats": {
+            "commentCount": len(comments),
+            "fileCount": len(knowledge.files)
+        },
+        "comments": comments
+    }
+
+
+@router.get("/")
+async def get_knowledge_list(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    keyword: Optional[str] = None,
+    limit: int = 20,
+    offset: int = 0
+):
+    query = db.query(Knowledge)
+
+    # タイトルでの部分一致検索
+    if keyword:
+        query = query.filter(Knowledge.title.like(f"%{keyword}%"))
+
+    knowledges = (
+        query.order_by(Knowledge.created_at.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+
+    result = []
+    for k in knowledges:
+        result.append({
+            "id": k.id,
+            "title": k.title,
+            "category": k.category,
+            "method": k.method,
+            "target": k.target,
+            "views": k.views,
+            "createdAt": k.created_at.strftime("%Y年%m月%d日"),
+            "author": {
+                "id": k.author.id,
+                "name": k.author.username,
+                "avatarUrl": k.author.avatar_url
+            }
+        })
+
+    return result
+
+@router.put("/{knowledge_id}")
+async def update_knowledge(
+    knowledge_id: int,
+    title: str = Form(...),
+    method: str = Form(...),
+    target: str = Form(...),
+    description: str = Form(...),
+    category: Optional[str] = Form(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    knowledge = db.query(Knowledge).filter(Knowledge.id == knowledge_id).first()
+
+    if not knowledge:
+        raise HTTPException(status_code=404, detail="ナレッジが見つかりません")
+    if knowledge.author_id != current_user.id:
+        raise HTTPException(status_code=403, detail="編集権限がありません")
+
+    knowledge.title = title
+    knowledge.method = method
+    knowledge.target = target
+    knowledge.description = description
+    knowledge.category = category
+    knowledge.updated_at = datetime.utcnow()
+
+    db.commit()
+    db.refresh(knowledge)
+
+    return {"message": "ナレッジを更新しました", "id": knowledge.id}
+
+@router.delete("/{knowledge_id}")
+async def delete_knowledge(
+    knowledge_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    knowledge = db.query(Knowledge).filter(Knowledge.id == knowledge_id).first()
+
+    if not knowledge:
+        raise HTTPException(status_code=404, detail="ナレッジが見つかりません")
+    if knowledge.author_id != current_user.id:
+        raise HTTPException(status_code=403, detail="削除権限がありません")
+
+    db.delete(knowledge)
+    db.commit()
+
+    return {"message": "ナレッジを削除しました", "id": knowledge_id}
