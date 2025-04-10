@@ -28,6 +28,17 @@ jobs:
           zip -r ../package.zip .
           cd ..
 
+      - name: Check package contents
+        run: |
+          echo "=== Checking package contents ==="
+          unzip -l package.zip | grep -E "routers/|main.py|requirements.txt"
+          echo "=== Checking routers directory ==="
+          unzip -l package.zip | grep "routers/"
+          echo "=== Checking auth router ==="
+          unzip -l package.zip | grep "routers/auth.py"
+          echo "=== Full package contents ==="
+          unzip -l package.zip
+
       # ❌ このステップは削除：Azure Login は不要！
 
       - name: Deploy to Azure Web App
