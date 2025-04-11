@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, HTTPException, status, Body
+from sqlalchemy.orm import Session, joinedload
 from typing import List
 from datetime import datetime
 
@@ -23,13 +23,14 @@ class CommentResponse(BaseModel):
     content: str
     author_id: int
     author_name: str
+    avatar_url: str | None
     created_at: datetime
 
 # コメントを作成
 @router.post("/", response_model=CommentResponse)
 async def create_comment(
     knowledge_id: int = Path(..., description="コメント対象のナレッジID"),
-    comment: CommentCreate = ...,
+    comment: CommentCreate = Body(..., description="コメントの内容"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -52,6 +53,7 @@ async def create_comment(
         content=new_comment.content,
         author_id=current_user.id,
         author_name=current_user.username,
+        avatar_url=current_user.avatar_url,
         created_at=new_comment.created_at
     )
 
@@ -61,14 +63,19 @@ async def get_comments(
     knowledge_id: int,
     db: Session = Depends(get_db)
 ):
-    comments = db.query(Comment).filter(Comment.knowledge_id == knowledge_id).order_by(Comment.created_at.asc()).all()
+    # authorをeager loadして取得
+    comments = db.query(Comment).options(
+        joinedload(Comment.author)
+    ).filter(Comment.knowledge_id == knowledge_id).order_by(Comment.created_at.asc()).all()
 
     return [
         CommentResponse(
             id=comment.id,
             content=comment.content,
             author_id=comment.author_id,
-            author_name=comment.author.username,
+            # authorがNoneの場合のフォールバック
+            author_name=comment.author.username if comment.author else "削除されたユーザー",
+            avatar_url=comment.author.avatar_url if comment.author else None,
             created_at=comment.created_at
         )
         for comment in comments

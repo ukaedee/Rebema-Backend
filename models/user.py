@@ -30,4 +30,14 @@ class User(Base):
     collaborations = relationship("KnowledgeCollaborator", back_populates="user")
     profile = relationship("Profile", back_populates="user", uselist=False) 
 
+    @property
+    def avatar_url(self) -> str | None:
+        """
+        ユーザーのアバター画像のURLを返す
+        画像が設定されていない場合はNoneを返す
+        """
+        if self.avatar_data is None:
+            return None
+        return f"/profile/{self.id}/avatar"
+
 
