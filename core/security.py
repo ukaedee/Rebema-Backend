@@ -13,7 +13,7 @@ from models.user import User
 # 設定
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-here")  # 環境変数から取得、デフォルトも設定
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 1440
 
 # パスワードハッシュ
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
