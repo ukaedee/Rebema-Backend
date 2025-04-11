@@ -99,6 +99,7 @@ async def get_profile(
             "id": knowledge.id,
             "title": knowledge.title,
             "method": knowledge.method,
+            "target": knowledge.target,
             "author": current_user.username,
             "views": knowledge.views,
             "createdAt": knowledge.created_at.strftime("%Y年%m月%d日"),
