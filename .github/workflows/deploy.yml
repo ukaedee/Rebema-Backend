@@ -22,7 +22,7 @@ jobs:
       - name: Create deployment package
         run: |
           mkdir -p deploy_package
-          rsync -av --exclude='venv' . deploy_package/
+          cp -r main.py requirements.txt routers/ startup.sh deploy_package/
           chmod +x deploy_package/startup.sh
           cd deploy_package
           zip -r ../package.zip .
