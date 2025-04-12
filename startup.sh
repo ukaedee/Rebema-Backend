@@ -3,8 +3,10 @@
 # デバッグモードを有効化
 set -x
 
+cd "$(dirname "$0")" || exit 1
+
 # タイムアウト設定（秒）
-DB_CHECK_TIMEOUT=30
+DB_CHECK_TIMEOUT=100
 
 # エラーハンドリング関数
 handle_error() {
@@ -37,31 +39,9 @@ echo "=== Current Directory ==="
 pwd
 ls -la
 
-# クリーンアップ処理
-echo "=== Cleaning up old files ==="
-cd /home/site/wwwroot
-if [ -f "output.tar.gz" ]; then
-    echo "Removing output.tar.gz..."
-    rm output.tar.gz
-fi
 
-if [ -f "oryx-manifest.toml" ]; then
-    echo "Removing oryx-manifest.toml..."
-    rm oryx-manifest.toml
-fi
 
-if [ -f ".ostype" ]; then
-    echo "Removing .ostype..."
-    rm .ostype
-fi
 
-if [ -f "hostingstart.html" ]; then
-    echo "Removing hostingstart.html..."
-    rm hostingstart.html
-fi
-
-echo "Current directory contents after cleanup:"
-ls -la
 
 echo "=== Python Information ==="
 echo "Python Version Environment Variable: $PYTHON_VERSION"
@@ -81,13 +61,13 @@ echo "=== Directory Structure ==="
 echo "Contents of current directory:"
 run_with_output ls -la
 
+
 # アプリケーションのルートディレクトリを明示的に指定
-# アプリケーションのルートディレクトリを明示的に指定
-APP_DIR="/home/site/wwwroot"
+APP_DIR=$(pwd)
 echo "Using application directory: $APP_DIR"
 
 echo "=== Moving to Application Directory ==="
-cd "$APP_DIR" || exit 1
+
 
 echo "Current directory: $(pwd)"
 run_with_output ls -la
