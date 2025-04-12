@@ -1,3 +1,6 @@
+
+exec > /home/LogFiles/startup.log 2>&1
+
 #!/bin/bash
 set -e
 set -x
