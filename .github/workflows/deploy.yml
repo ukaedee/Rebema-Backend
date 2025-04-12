@@ -19,23 +19,17 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Create deployment package
+      - name: Create deployment package (no zip)
         run: |
           mkdir -p deploy_package
           cp -r main.py requirements.txt routers/ models/ utils/ startup.sh deploy_package/
           chmod +x deploy_package/startup.sh
-
-      - name: Check package contents
-        run: |
-          echo "=== Checking package contents ==="
+          echo "✅ deploy_package created:"
           ls -la deploy_package
-          echo "=== routers ==="
-          ls -la deploy_package/routers || true
-          echo "=== Done ==="
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+          package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}  # ← ZIPじゃない！
