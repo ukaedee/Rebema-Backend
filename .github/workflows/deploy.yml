@@ -6,7 +6,6 @@ on:
 
 env:
   AZURE_WEBAPP_NAME: app-002-step3-2-py-oshima14
-  RESOURCE_GROUP: rg-002-step3-2-oshima
 
 jobs:
   build-and-deploy:
@@ -31,17 +30,22 @@ jobs:
           echo "🕵️ Checking for zip:"
           ls -la deploy_package | grep zip || echo "✅ No zip found"
 
-      - name: 🚀 Deploy to Azure Web App using Git (NO ZIP)
+      - name: 🔧 Install Azure CLI
+        run: |
+          curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+
+      - name: 🔑 Azure login with publish profile
+        uses: azure/login@v1
+        with:
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+
+      - name: 🚀 Deploy to Azure Web App using Azure CLI (NO ZIP)
         run: |
           cd deploy_package
-          git init
-          git config --global user.email "github-actions@github.com"
-          git config --global user.name "GitHub Actions"
-          git add .
-          git commit -m "Deploy from GitHub Actions"
           
-          # Gitデプロイメントで直接プッシュ
-          git remote add azure https://${{ secrets.AZURE_DEPLOYMENT_USER }}:${{ secrets.AZURE_DEPLOYMENT_PASSWORD }}@app-002-step3-2-py-oshima14.scm.azurewebsites.net/app-002-step3-2-py-oshima14.git
-          
-          # フォースプッシュでリモートにデプロイ
-          git push azure master -f
+          # Azure CLIを使用してファイルを直接アップロード
+          echo "Deploying files using Azure CLI..."
+          az webapp deploy --name ${{ env.AZURE_WEBAPP_NAME }} \
+                           --resource-group rg-002-step3-2-oshima \
+                           --src-path . \
+                           --type static
