@@ -6,6 +6,7 @@ on:
 
 env:
   AZURE_WEBAPP_NAME: app-002-step3-2-py-oshima14
+  RESOURCE_GROUP: rg-002-step3-2-oshima
 
 jobs:
   build-and-deploy:
@@ -30,9 +31,17 @@ jobs:
           echo "🕵️ Checking for zip:"
           ls -la deploy_package | grep zip || echo "✅ No zip found"
 
-      - name: 🚀 Deploy to Azure Web App (no ZIP!)
-        uses: azure/webapps-deploy@v2
-        with:
-          app-name: ${{ env.AZURE_WEBAPP_NAME }}
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: ./deploy_package/
+      - name: 🚀 Deploy to Azure Web App using Git (NO ZIP)
+        run: |
+          cd deploy_package
+          git init
+          git config --global user.email "github-actions@github.com"
+          git config --global user.name "GitHub Actions"
+          git add .
+          git commit -m "Deploy from GitHub Actions"
+          
+          # Gitデプロイメントで直接プッシュ
+          git remote add azure https://${{ secrets.AZURE_DEPLOYMENT_USER }}:${{ secrets.AZURE_DEPLOYMENT_PASSWORD }}@app-002-step3-2-py-oshima14.scm.azurewebsites.net/app-002-step3-2-py-oshima14.git
+          
+          # フォースプッシュでリモートにデプロイ
+          git push azure master -f
