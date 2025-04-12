@@ -1,4 +1,4 @@
-name: Deploy to Azure Web App
+name: Deploy to Azure Web App (ZIP)
 
 on:
   push:
@@ -6,11 +6,11 @@ on:
 
 env:
   AZURE_WEBAPP_NAME: app-002-step3-2-py-oshima14
+  ZIP_NAME: package.zip
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
@@ -20,17 +20,20 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: 📦 Create deployment package (no zip)
+      - name: 📦 Create ZIP deployment package
         run: |
           mkdir -p deploy_package
-          cp -r main.py requirements.txt routers/ models/ utils/ core/ startup.sh deploy_package/
+          cp -r main.py requirements.txt routers/ models/ utils/ startup.sh deploy_package/
           chmod +x deploy_package/startup.sh
-          echo "✅ deploy_package created:"
-          ls -la deploy_package
+          cd deploy_package
+          zip -r ../${{ env.ZIP_NAME }} .
+          cd ..
+          echo "✅ ZIP contents:"
+          unzip -l ${{ env.ZIP_NAME }}
 
-      - name: 🚀 Deploy to Azure Web App
+      - name: 🚀 Deploy ZIP to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: ./deploy_package
+          package: ${{ env.ZIP_NAME }}
