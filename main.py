@@ -5,6 +5,9 @@ from routers import auth, knowledge, ranking, profile
 from models.database import engine, Base
 import os
 from routers import comments
+from dotenv import load_dotenv
+load_dotenv()
+
 
 
 
@@ -29,6 +32,8 @@ app.include_router(knowledge.router, prefix="/knowledge", tags=["knowledge"])
 app.include_router(ranking.router, prefix="/ranking", tags=["ranking"])
 app.include_router(profile.router, prefix="/profile", tags=["profile"])
 app.include_router(comments.router)
+
+
 @app.get("/")
 async def root():
     return {"message": "Welcome to Rebema API"}
