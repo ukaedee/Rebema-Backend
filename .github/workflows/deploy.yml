@@ -6,7 +6,6 @@ on:
 
 env:
   AZURE_WEBAPP_NAME: app-002-step3-2-py-oshima14
-  AZURE_WEBAPP_PACKAGE_PATH: ./deploy_package  # フォルダを直接デプロイ！
 
 jobs:
   build-and-deploy:
@@ -28,8 +27,8 @@ jobs:
           chmod +x deploy_package/startup.sh
           echo "✅ deploy_package created:"
           ls -la deploy_package
-          echo "📂 deploy_package/routers:"
-          ls -la deploy_package/routers || true
+          echo "🕵️ Checking for zip:"
+          ls -la deploy_package | grep zip || echo "✅ No zip found"
 
       - name: 🚀 Deploy to Azure Web App (no ZIP!)
         uses: azure/webapps-deploy@v2
