@@ -10,6 +10,7 @@ from models.comment import Comment
 from core.security import get_current_user
 from pydantic import BaseModel
 from fastapi import Path
+from typing import Optional, List
 
 router = APIRouter(prefix="/knowledge/{knowledge_id}/comments", tags=["comments"])
 
@@ -23,7 +24,7 @@ class CommentResponse(BaseModel):
     content: str
     author_id: int
     author_name: str
-    avatar_url: str | None
+    avatar_url: Optional[str]
     created_at: datetime
 
 # コメントを作成

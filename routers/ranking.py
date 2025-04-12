@@ -8,7 +8,7 @@ from models.database import get_db
 from models.user import User
 from models.user_activity import UserActivity
 from core.security import get_current_user
-
+from typing import Optional, List
 router = APIRouter(prefix="/ranking", tags=["ranking"])
 
 class RankingResponse(BaseModel):
@@ -17,7 +17,7 @@ class RankingResponse(BaseModel):
     name: str
     department: str
     level: int
-    avatar_url: str | None
+    avatar_url: Optional[str]
 
 def get_position_suffix(position: int) -> str:
     if position % 10 == 1 and position != 11:
