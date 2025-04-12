@@ -11,6 +11,7 @@ env:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
@@ -23,7 +24,7 @@ jobs:
       - name: 📦 Create ZIP deployment package
         run: |
           mkdir -p deploy_package
-          cp -r main.py requirements.txt routers/ models/ utils/ startup.sh deploy_package/
+          cp -r main.py requirements.txt routers/ models/ utils/ startup.sh core alembic deploy_package/
           chmod +x deploy_package/startup.sh
           cd deploy_package
           zip -r ../${{ env.ZIP_NAME }} .
