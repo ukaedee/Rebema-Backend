@@ -5,6 +5,18 @@ set -x
 
 cd "$(dirname "$0")" || exit 1
 
+# pipを自動インストール
+if ! command -v pip &> /dev/null; then
+    echo "pip not found. Installing pip..."
+    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+    python3 get-pip.py --user
+fi
+
+# userディレクトリにインストールされた実行ファイル用にPATHを更新
+export PATH=$HOME/.local/bin:$PATH
+
+
+
 # タイムアウト設定（秒）
 DB_CHECK_TIMEOUT=100
 
