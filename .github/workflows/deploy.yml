@@ -6,30 +6,34 @@ on:
 
 env:
   AZURE_WEBAPP_NAME: app-002-step3-2-py-oshima14
-  AZURE_WEBAPP_PACKAGE_PATH: ./deploy_package
+  AZURE_WEBAPP_PACKAGE_PATH: ./deploy_package  # フォルダを直接デプロイ！
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - name: Set up Python
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
-      - name: Create deployment package (no zip)
+      - name: 📦 Create deployment package (no zip)
         run: |
           mkdir -p deploy_package
           cp -r main.py requirements.txt routers/ models/ utils/ startup.sh deploy_package/
           chmod +x deploy_package/startup.sh
           echo "✅ deploy_package created:"
           ls -la deploy_package
+          echo "📂 deploy_package/routers:"
+          ls -la deploy_package/routers || true
 
-      - name: Deploy to Azure Web App
+      - name: 🚀 Deploy to Azure Web App (no ZIP!)
         uses: azure/webapps-deploy@v2
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}  # ← ZIPじゃない！
+          package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
