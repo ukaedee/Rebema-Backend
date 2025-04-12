@@ -6,7 +6,7 @@ on:
 
 env:
   AZURE_WEBAPP_NAME: app-002-step3-2-py-oshima14
-  AZURE_WEBAPP_PACKAGE_PATH: .
+  AZURE_WEBAPP_PACKAGE_PATH: ./deploy_package
 
 jobs:
   build-and-deploy:
@@ -22,29 +22,20 @@ jobs:
       - name: Create deployment package
         run: |
           mkdir -p deploy_package
-          cp -r main.py requirements.txt routers/ models/  utils/ startup.sh deploy_package/
+          cp -r main.py requirements.txt routers/ models/ utils/ startup.sh deploy_package/
           chmod +x deploy_package/startup.sh
-          cd deploy_package
-          zip -r ../package.zip .
-          cd ..
 
       - name: Check package contents
         run: |
           echo "=== Checking package contents ==="
-          unzip -l package.zip | grep -E "routers/|main.py|requirements.txt"
-          echo "=== Checking routers directory ==="
-          unzip -l package.zip | grep "routers/"
-          echo "=== Checking auth router ==="
-          unzip -l package.zip | grep "routers/auth.py"
-          echo "=== Full package contents ==="
-          unzip -l package.zip
-
-      # ❌ このステップは削除：Azure Login は不要！
+          ls -la deploy_package
+          echo "=== routers ==="
+          ls -la deploy_package/routers || true
+          echo "=== Done ==="
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: package.zip
-
+          package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
