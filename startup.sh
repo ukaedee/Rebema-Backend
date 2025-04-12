@@ -98,7 +98,7 @@ PORT=${PORT:-8000}
 echo "Using port: $PORT"
 
 # PYTHONPATHにアプリケーションディレクトリを追加
-export PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}$APP_DIR:$(dirname $APP_DIR)"
+export PYTHONPATH="/home/site/wwwroot:$PYTHONPATH"
 echo "PYTHONPATH: $PYTHONPATH"
 
 echo "=== Testing Application Import ==="
