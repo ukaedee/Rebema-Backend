@@ -7,6 +7,7 @@ from models.database import get_db
 from models.user import User
 from models.knowledge import Knowledge
 from models.file import File as FileModel
+from models.comment import Comment
 from core.security import get_current_user
 from utils.experience import add_experience
 
@@ -76,7 +77,7 @@ async def create_knowledge(
         db.commit()
 
         # 経験値を追加
-        add_experience(current_user, 10, db)
+        experience_result = add_experience(current_user, 10, db)
         
         return {
             "id": knowledge.id,
@@ -97,6 +98,14 @@ async def create_knowledge(
             "stats": {
                 "commentCount": 0,
                 "fileCount": len(files) if files else 0
+            },
+            "experience": {
+                "level_up": experience_result["level_up"],
+                "before_level": experience_result["before_level"],
+                "before_xp": experience_result["before_xp"],
+                "after_level": experience_result["after_level"],
+                "after_xp": experience_result["after_xp"],
+                "required_xp": experience_result["required_xp"]
             }
         }
 
