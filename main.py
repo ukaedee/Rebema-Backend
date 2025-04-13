@@ -11,9 +11,6 @@ load_dotenv()
 
 
 
-# データベースのテーブルを作成
-Base.metadata.create_all(bind=engine)
-
 app = FastAPI(title="Rebema API")
 
 # CORS設定
