@@ -35,35 +35,42 @@ async def get_user_profile(
             detail="ユーザーが見つかりません"
         )
     
-    # プロフィール情報を取得
-    profile = db.query(Profile).filter(Profile.user_id == user.id).first()
-    if not profile:
-        profile = Profile(user_id=user.id)
-        db.add(profile)
-        db.commit()
-        db.refresh(profile)
-    
-    # ナレッジ数を取得
-    knowledge_count = db.query(Knowledge).filter(
-        Knowledge.author_id == user.id
-    ).count()
-    
-    # コメント数を取得
-    comment_count = db.query(Comment).filter(
-        Comment.author_id == user.id
-    ).count()
-    
+    # ユーザーの最新のナレッジを取得
+    recent_knowledge = (
+        db.query(Knowledge)
+        .filter(Knowledge.author_id == user.id)
+        .order_by(Knowledge.created_at.desc())
+        .limit(5)
+        .all()
+    )
+
+    # アクティビティリストの作成
+    activities = []
+    for knowledge in recent_knowledge:
+        activities.append({
+            "id": knowledge.id,
+            "title": knowledge.title,
+            "category": knowledge.category,
+            "method": knowledge.method,
+            "target": knowledge.target,
+            "views": knowledge.views,
+            "createdAt": knowledge.created_at.strftime("%Y年%m月%d日"),
+            "author": {
+                "id": user.id,
+                "name": user.username,
+                "avatarUrl": user.avatar_url
+            }
+        })
+
     return {
         "id": user.id,
+        "email": user.email,
         "name": user.username,
         "department": user.department,
         "level": user.level,
-        "hasAvatar": user.avatar_data is not None,
-        "bio": profile.bio,
-        "stats": {
-            "knowledgeCount": knowledge_count,
-            "commentCount": comment_count
-        }
+        "currentXp": user.current_xp,
+        "avatar": user.avatar_data,
+        "activity": activities
     }
 
 @router.get("/me")
@@ -316,4 +323,4 @@ def get_category_icon_and_color(category: str) -> tuple[str, str]:
         # 他のカテゴリーも必要に応じて追加
     }
     
-    return category_mapping.get(category, ("📝", "#FFE0D6"))  # デフォルト値 
+    return category_mapping.get(category, ("📝", "#FFE0D6"))  # デフォルト値
