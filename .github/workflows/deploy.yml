@@ -23,7 +23,7 @@ jobs:
       - name: 📦 Create ZIP deployment package
         run: |
           mkdir -p deploy_package
-          cp -r main.py requirements.txt routers/ models/ utils/ startup.sh DigiCertGlobalRootCA.crt.pem deploy_package/ core/
+          cp -r main.py requirements.txt routers/ models/ utils/ core/ startup.sh DigiCertGlobalRootCA.crt.pem deploy_package/
           chmod +x deploy_package/startup.sh
           cd deploy_package
           zip -r ../${{ env.ZIP_NAME }} .
