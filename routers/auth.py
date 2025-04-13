@@ -76,35 +76,20 @@ async def get_profile(
     # アクティビティリストの作成
     activities = []
     for knowledge in recent_knowledge:
-        # ナレッジに関連するコメントを取得（Userテーブルと結合）
-        comments = (
-            db.query(Comment, User)
-            .join(User, Comment.author_id == User.id)
-            .filter(Comment.knowledge_id == knowledge.id)
-            .order_by(Comment.created_at.desc())
-            .all()
-        )
-        
-        comment_list = [
-            {
-                "author": user.username,  # Userテーブルから直接username取得
-                "avatar": user.avatar_data,
-                "createdAt": comment.created_at.strftime("%Y年%m月%d日"),
-                "content": comment.content
-            }
-            for comment, user in comments
-        ]
-
+        # ナレッジをアクティビティリストに追加
         activities.append({
             "id": knowledge.id,
             "title": knowledge.title,
+            "category": knowledge.category,
             "method": knowledge.method,
             "target": knowledge.target,
-            "author": current_user.username,
             "views": knowledge.views,
             "createdAt": knowledge.created_at.strftime("%Y年%m月%d日"),
-            "content": knowledge.description,
-            "comments": comment_list
+            "author": {
+                "id": current_user.id,
+                "name": current_user.username,
+                "avatarUrl": current_user.avatar_url
+            }
         })
 
     return {
@@ -113,7 +98,7 @@ async def get_profile(
         "name": current_user.username,
         "department": current_user.department,
         "level": current_user.level,
-        "experiencePoints": current_user.experience_points,
+        "currentXp": current_user.current_xp,
         "avatar": current_user.avatar_data,
         "activity": activities
     }
