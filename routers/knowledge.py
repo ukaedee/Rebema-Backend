@@ -133,6 +133,54 @@ async def create_knowledge(
             }
         }
 
+# 閲覧数順のナレッジ取得を追加　0408
+# ルーティングによるエラーとわかり、ルート順を変更　0414
+@router.get("/popular")
+async def get_popular_knowledge(
+    limit: int = 10,
+    db: Session = Depends(get_db)
+):
+    
+    knowledge_list = (
+        db.query(Knowledge)
+        .order_by(Knowledge.views.desc())
+        .limit(limit)
+        .all()
+    )
+
+    result = []
+    for k in knowledge_list:
+        author = db.query(User).filter(User.id == k.author_id).first()
+        file_count = db.query(FileModel).filter(FileModel.knowledge_id == k.id).count()
+        comment_count = db.query(Comment).filter(Comment.knowledge_id == k.id).count()
+
+        result.append({
+            "id": k.id,
+            "title": k.title,
+            "description": k.description,
+            "method": k.method,
+            "target": k.target,
+            "category": k.category,
+            "views": k.views,
+            "createdAt": k.created_at.strftime("%Y年%m月%d日"),
+            "updatedAt": k.updated_at.strftime("%Y年%m月%d日"),
+            "author": {
+                "id": author.id,
+                "name": author.username,
+                "avatarUrl": author.avatar_url,
+                "department": author.department
+            },
+            "stats": {
+                "commentCount": comment_count,
+                "fileCount": file_count
+            }
+        })
+
+    return {
+        "total": len(result),
+        "items": result
+    }
+
 @router.get("/{knowledge_id}")
 async def get_knowledge_detail(
     knowledge_id: int,
@@ -274,50 +322,3 @@ async def delete_knowledge(
     db.commit()
 
     return {"message": "ナレッジを削除しました", "id": knowledge_id}
-
-# 閲覧数順のナレッジ取得を追加　0408
-@router.get("/popular")
-async def get_popular_knowledge(
-    limit: int = 10,
-    db: Session = Depends(get_db)
-):
-    
-    knowledge_list = (
-        db.query(Knowledge)
-        .order_by(Knowledge.views.desc())
-        .limit(limit)
-        .all()
-    )
-
-    result = []
-    for k in knowledge_list:
-        author = db.query(User).filter(User.id == k.author_id).first()
-        file_count = db.query(FileModel).filter(FileModel.knowledge_id == k.id).count()
-        comment_count = db.query(Comment).filter(Comment.knowledge_id == k.id).count()
-
-        result.append({
-            "id": k.id,
-            "title": k.title,
-            "description": k.description,
-            "method": k.method,
-            "target": k.target,
-            "category": k.category,
-            "views": k.views,
-            "createdAt": k.created_at.strftime("%Y年%m月%d日"),
-            "updatedAt": k.updated_at.strftime("%Y年%m月%d日"),
-            "author": {
-                "id": author.id,
-                "name": author.username,
-                "avatarUrl": author.avatar_url,
-                "department": author.department
-            },
-            "stats": {
-                "commentCount": comment_count,
-                "fileCount": file_count
-            }
-        })
-
-    return {
-        "total": len(result),
-        "items": result
-    }
