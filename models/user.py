@@ -22,6 +22,7 @@ class User(Base):
     avatar_data = Column(LargeBinary, nullable=True)
     avatar_content_type = Column(String(50), nullable=True)  # 画像のMIMEタイプを保存
     department = Column(String(100), nullable=True)
+    avatar_url = Column(String(255), nullable=True)
 
     # リレーションシップ
     knowledges = relationship("Knowledge", back_populates="author")
